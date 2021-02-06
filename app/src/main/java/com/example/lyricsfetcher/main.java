@@ -1,8 +1,13 @@
 package com.example.lyricsfetcher;
 
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.app.NotificationCompat;
+import androidx.core.app.NotificationManagerCompat;
 
+import android.app.NotificationChannel;
+import android.app.NotificationManager;
 import android.content.IntentFilter;
+import android.os.Build;
 import android.os.Bundle;
 
 
@@ -21,7 +26,7 @@ public class main extends AppCompatActivity {
     String trackName = "null";
     String lyricsText = "null";
     GetLyrics lyricsFetcher = new GetLyrics();
-
+    NotificationCompat.Builder builder = new NotificationCompat.Builder(main.this,"notif");
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -29,20 +34,29 @@ public class main extends AppCompatActivity {
         setContentView(R.layout.activity_spotify);
 
 
+        //Notifiacation code
+        //If statement for API's greater than oreo(26)
+        if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.O){
+            NotificationChannel channel = new NotificationChannel("notif","Channel 1", NotificationManager.IMPORTANCE_DEFAULT);
+            NotificationManager manager = getSystemService(NotificationManager.class);
+            manager.createNotificationChannel(channel);
+        }
 
+
+        //Intent filter for the broadcast receiver
         IntentFilter iF = new IntentFilter();
         iF.addAction("com.android.music.metachanged");
         iF.addAction("com.sec.android.app.music.metachanged");
         iF.addAction("com.samsung.sec.android.MusicPlayer.metachanged");
         iF.addAction("com.spotify.music.metadatachanged");
-
         registerReceiver(mReceiver, iF);
 
+
         //Widget declarations
-        Button button = (Button) findViewById(R.id.getLyrics);
-        TextView artistTitle = (TextView) findViewById(R.id.artistTitle);
-        TextView songTitle = (TextView) findViewById(R.id.songTitle);
-        TextView lyrics = (TextView) findViewById(R.id.lyrics);
+        Button button = findViewById(R.id.getLyrics);
+        TextView artistTitle = findViewById(R.id.artistTitle);
+        TextView songTitle = findViewById(R.id.songTitle);
+        TextView lyrics = findViewById(R.id.lyrics);
 
 
 
@@ -55,13 +69,10 @@ public class main extends AppCompatActivity {
 
 
 
-        View.OnClickListener listener = new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                lyrics.setText(lyricsText);
-                artistTitle.setText(artistName);
-                songTitle.setText(trackName);
-            }
+        View.OnClickListener listener = v -> {
+            lyrics.setText(lyricsText);
+            artistTitle.setText(artistName);
+            songTitle.setText(trackName);
         };
         button.setOnClickListener(listener);
     }
@@ -84,14 +95,18 @@ public class main extends AppCompatActivity {
             if(action.equals("com.spotify.music.metadatachanged") |
                     action.equals("com.android.music.metachanged")){
 
-                Thread thread = new Thread(new Runnable() {
+                Thread thread = new Thread(() -> {
+                    lyricsText = lyricsFetcher.GetLyrics(trackName,artistName);
+                    Log.d("threading","Broadcast thread is working right now,current playing track: "
+                            + artistName + "-" + trackName);
+                    //Notification code here
 
-                    @Override
-                    public void run() {
-                        lyricsText = lyricsFetcher.GetLyrics(trackName,artistName);
-                        Log.d("threading","Broadcast thread is working right now,current playing track: "
-                                + artistName + "-" + trackName);
-                    }
+                    builder.setContentTitle(artistName);
+                    builder.setContentText(trackName);
+                    builder.setSmallIcon(R.drawable.ic_message);
+
+                    NotificationManagerCompat managerCompat = NotificationManagerCompat.from(main.this);
+                    managerCompat.notify(31,builder.build());
                 });
                 try {
                     thread.start();
