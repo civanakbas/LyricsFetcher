@@ -6,6 +6,7 @@ import androidx.core.app.NotificationManagerCompat;
 
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
+import android.app.PendingIntent;
 import android.content.IntentFilter;
 import android.os.Build;
 import android.os.Bundle;
@@ -25,22 +26,27 @@ public class main extends AppCompatActivity {
     String artistName = "null";
     String trackName = "null";
     String lyricsText = "null";
+    int id = 31;
     GetLyrics lyricsFetcher = new GetLyrics();
     NotificationCompat.Builder builder = new NotificationCompat.Builder(main.this,"notif");
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_spotify);
-
-
-        //Notifiacation code
+        //Notification code
         //If statement for API's greater than oreo(26)
         if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.O){
             NotificationChannel channel = new NotificationChannel("notif","Channel 1", NotificationManager.IMPORTANCE_DEFAULT);
             NotificationManager manager = getSystemService(NotificationManager.class);
             manager.createNotificationChannel(channel);
         }
+
+        Intent resultIntent = new Intent(this,main.class);
+        PendingIntent resultPendingIntent= PendingIntent.getActivity(this,1,resultIntent,PendingIntent.FLAG_UPDATE_CURRENT);
+        builder.setContentIntent(resultPendingIntent);
+
 
 
         //Intent filter for the broadcast receiver
@@ -63,10 +69,8 @@ public class main extends AppCompatActivity {
         lyrics.setMovementMethod(ScrollingMovementMethod.getInstance());
 
         //Setting the title texts
-        artistTitle.setText(artistName);
-        songTitle.setText(trackName);
-
-
+        //artistTitle.setText(artistName);
+        //songTitle.setText(trackName);
 
 
         View.OnClickListener listener = v -> {
@@ -75,9 +79,9 @@ public class main extends AppCompatActivity {
             songTitle.setText(trackName);
         };
         button.setOnClickListener(listener);
+
+
     }
-
-
     public final BroadcastReceiver mReceiver = new BroadcastReceiver() {
 
         @Override
@@ -90,8 +94,10 @@ public class main extends AppCompatActivity {
             String track = intent.getStringExtra("track");
             Log.i("tag", "This is the track information:");
             Log.v("tag", artist + ":" + track);
+            Log.d("playing",String.valueOf(playing));
             artistName = artist;
             trackName = track;
+
             if(action.equals("com.spotify.music.metadatachanged") |
                     action.equals("com.android.music.metachanged")){
 
@@ -99,24 +105,25 @@ public class main extends AppCompatActivity {
                     lyricsText = lyricsFetcher.GetLyrics(trackName,artistName);
                     Log.d("threading","Broadcast thread is working right now,current playing track: "
                             + artistName + "-" + trackName);
-                    //Notification code here
-
-                    builder.setContentTitle(artistName);
-                    builder.setContentText(trackName);
-                    builder.setSmallIcon(R.drawable.ic_message);
-
-                    NotificationManagerCompat managerCompat = NotificationManagerCompat.from(main.this);
-                    managerCompat.notify(31,builder.build());
+                    set_notification(id);
                 });
-                try {
-                    thread.start();
-                    thread.join();
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
+                thread.start();
             }
 
+
         }
+
     };
 
+
+    public void set_notification(int id){
+        builder.setContentTitle(artistName);
+        builder.setContentText(trackName);
+        builder.setSmallIcon(R.drawable.ic_message);
+        builder.setOngoing(true);
+        builder.setTimeoutAfter(1000*60*5);
+        NotificationManagerCompat managerCompat = NotificationManagerCompat.from(main.this);
+        managerCompat.notify(id,builder.build());
+
+    }
 }

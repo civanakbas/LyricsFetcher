@@ -14,18 +14,14 @@
         android:theme="@style/Theme.AppCompat.NoActionBar"
         android:usesCleartextTraffic="true"
         tools:targetApi="m">
-        <activity android:name=".main">
+        <activity android:name=".main"
+            android:launchMode="singleTop">
 
 
         <intent-filter>
             <action android:name="android.intent.action.MAIN" />
             <category android:name="android.intent.category.LAUNCHER" />
         </intent-filter>
-
-
-
-
-
         </activity>
         <receiver
             android:name=".main"
@@ -36,6 +32,7 @@
 
             <intent-filter>
                 <action android:name="com.spotify.music.metadatachanged"/>
+                <action android:name="com.spotify.music.playbackstatechanged"/>
             </intent-filter>
 
         </receiver>
