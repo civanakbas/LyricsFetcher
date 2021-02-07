@@ -83,6 +83,13 @@ public class main extends AppCompatActivity {
 
 
     }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        set_notification(id,false);
+    }
+
     public final BroadcastReceiver mReceiver = new BroadcastReceiver() {
 
         @Override
