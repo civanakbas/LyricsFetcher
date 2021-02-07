@@ -52,12 +52,12 @@ public class main extends AppCompatActivity {
         //Intent filter for the broadcast receiver
         IntentFilter iF = new IntentFilter();
         iF.addAction("com.android.music.metachanged");
-        iF.addAction("com.sec.android.app.music.metachanged");
-        iF.addAction("com.samsung.sec.android.MusicPlayer.metachanged");
+        iF.addAction("com.android.music.playstatechanged");
+        //iF.addAction("com.sec.android.app.music.metachanged");
+        //iF.addAction("com.samsung.sec.android.MusicPlayer.metachanged");
         iF.addAction("com.spotify.music.metadatachanged");
+        iF.addAction("com.spotify.music.playbackstatechanged");
         registerReceiver(mReceiver, iF);
-
-
         //Widget declarations
         Button button = findViewById(R.id.getLyrics);
         TextView artistTitle = findViewById(R.id.artistTitle);
@@ -92,38 +92,57 @@ public class main extends AppCompatActivity {
             Log.v("anan ", action + " / " + cmd);
             String artist = intent.getStringExtra("artist");
             String track = intent.getStringExtra("track");
-            Log.i("tag", "This is the track information:");
-            Log.v("tag", artist + ":" + track);
-            Log.d("playing",String.valueOf(playing));
-            artistName = artist;
-            trackName = track;
+            Log.i("track_info", "This is the track information:");
+            Log.v("track_info", artist + ":" + track);
+            Thread thread3 = new Thread(() -> {
+                artistName = artist;
+                trackName = track;
+            });
+            thread3.start();
+            try {
+                thread3.join();
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
 
             if(action.equals("com.spotify.music.metadatachanged") |
                     action.equals("com.android.music.metachanged")){
+                Log.d("METADATACHANGED","metadata is changed currently");
+                Thread thread1 = new Thread(() -> {
 
-                Thread thread = new Thread(() -> {
-                    lyricsText = lyricsFetcher.GetLyrics(trackName,artistName);
                     Log.d("threading","Broadcast thread is working right now,current playing track: "
                             + artistName + "-" + trackName);
-                    set_notification(id);
+                    lyricsText = lyricsFetcher.GetLyrics(trackName,artistName);
                 });
-                thread.start();
+                thread1.start();
             }
-
-
+            else if(action.equals("com.spotify.music.playbackstatechanged") |
+                    action.equals("com.android.music.playstatechanged")){
+                Thread thread2 = new Thread(() -> {
+                    set_notification(id,playing);
+                });
+                thread2.start();
+                Log.d("playing","State of playing var is: " + playing);
+            }
         }
 
     };
 
 
-    public void set_notification(int id){
-        builder.setContentTitle(artistName);
-        builder.setContentText(trackName);
-        builder.setSmallIcon(R.drawable.ic_message);
-        builder.setOngoing(true);
-        builder.setTimeoutAfter(1000*60*5);
-        NotificationManagerCompat managerCompat = NotificationManagerCompat.from(main.this);
-        managerCompat.notify(id,builder.build());
-
+    public void set_notification(int id,boolean playing){
+        if(playing){
+            builder.setContentTitle(artistName);
+            builder.setContentText(trackName);
+            builder.setSmallIcon(R.drawable.ic_message);
+            builder.setOngoing(true);
+            builder.setTimeoutAfter(1000*60*5);
+            NotificationManagerCompat managerCompat = NotificationManagerCompat.from(main.this);
+            managerCompat.notify(id,builder.build());
+        }
+        else{
+            NotificationManagerCompat managerCompat = NotificationManagerCompat.from(main.this);
+            managerCompat.cancel(id);
+        }
     }
+
 }
