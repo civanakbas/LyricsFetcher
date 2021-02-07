@@ -29,6 +29,7 @@ public class main extends AppCompatActivity {
     int id = 31;
     GetLyrics lyricsFetcher = new GetLyrics();
     NotificationCompat.Builder builder = new NotificationCompat.Builder(main.this,"notif");
+    NotificationManagerCompat managerCompat;
 
 
     @Override
@@ -46,7 +47,7 @@ public class main extends AppCompatActivity {
         Intent resultIntent = new Intent(this,main.class);
         PendingIntent resultPendingIntent= PendingIntent.getActivity(this,1,resultIntent,PendingIntent.FLAG_UPDATE_CURRENT);
         builder.setContentIntent(resultPendingIntent);
-
+        managerCompat = NotificationManagerCompat.from(main.this);
 
 
         //Intent filter for the broadcast receiver
@@ -90,26 +91,15 @@ public class main extends AppCompatActivity {
             boolean playing = intent.getBooleanExtra("playing", false);
             String cmd = intent.getStringExtra("command");
             Log.v("anan ", action + " / " + cmd);
-            String artist = intent.getStringExtra("artist");
-            String track = intent.getStringExtra("track");
-            Log.i("track_info", "This is the track information:");
-            Log.v("track_info", artist + ":" + track);
-            Thread thread3 = new Thread(() -> {
-                artistName = artist;
-                trackName = track;
-            });
-            thread3.start();
-            try {
-                thread3.join();
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
+
 
             if(action.equals("com.spotify.music.metadatachanged") |
                     action.equals("com.android.music.metachanged")){
                 Log.d("METADATACHANGED","metadata is changed currently");
                 Thread thread1 = new Thread(() -> {
-
+                    artistName = intent.getStringExtra("artist");
+                    trackName = intent.getStringExtra("track");
+                    set_notification(id,playing);
                     Log.d("threading","Broadcast thread is working right now,current playing track: "
                             + artistName + "-" + trackName);
                     lyricsText = lyricsFetcher.GetLyrics(trackName,artistName);
@@ -135,12 +125,9 @@ public class main extends AppCompatActivity {
             builder.setContentText(trackName);
             builder.setSmallIcon(R.drawable.ic_message);
             builder.setOngoing(true);
-            builder.setTimeoutAfter(1000*60*5);
-            NotificationManagerCompat managerCompat = NotificationManagerCompat.from(main.this);
             managerCompat.notify(id,builder.build());
         }
         else{
-            NotificationManagerCompat managerCompat = NotificationManagerCompat.from(main.this);
             managerCompat.cancel(id);
         }
     }
